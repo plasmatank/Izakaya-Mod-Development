@@ -7,13 +7,15 @@ using HarmonyLib;
 
 namespace BalancedSakuyaMission
 {
-    [BepInPlugin("Plasmatank.BalancedSakuyaMission", "BalancedSakuyaMission", "1.0.0")]
+    [BepInPlugin("Plasmatank.BalancedSakuyaMission", "BalancedSakuyaMission", "1.1.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
         public ConfigEntry<string> ConfigName { get; private set; }
 
         public static ConfigEntry<int> amount;
+
+        public static ConfigEntry<bool> triple_mode;
 
         public static BepInEx.Logging.ManualLogSource Logger;
 
@@ -32,6 +34,7 @@ namespace BalancedSakuyaMission
             Log.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
             Debug("Plugin is now working.");
             amount = Config.Bind<int>("Config", "amount", 8, "完成咲夜任务后获得的三幻神数量，默认为8(重启游戏生效)");
+            triple_mode = Config.Bind<bool>("Config", "triple_mode", false, "开启后默认给三幻神各3杯共⑨杯，此模式不受amount影响。(true开启，false关闭)");
             Harmony.PatchAll();
         }
         [HarmonyPatch(typeof(Common.UI.ReceivedObjectDisplayerController), nameof(Common.UI.ReceivedObjectDisplayerController.NotifyMissionStart))]
@@ -85,10 +88,18 @@ namespace BalancedSakuyaMission
                                     Plugin.Debug(id.ToString());
                                 }
                                 int beverage = reward.rewardIntArray[0];
-                                int[] new_array = new int[amount.Value];
-                                for (int i = 0; i < amount.Value; i++)
+                                int[] new_array;
+                                if (triple_mode.Value is false)
                                 {
-                                    new_array[i] = beverage;
+                                    new_array = new int[amount.Value];
+                                    for (int i = 0; i < amount.Value; i++)
+                                    {
+                                        new_array[i] = beverage;
+                                    }
+                                }
+                                else
+                                {
+                                    new_array = new int[9] {11, 11, 11, 20, 20, 20, 21, 21, 21};
                                 }
                                 reward.rewardIntArray = new_array;
                                 bevs_temp = reward;
