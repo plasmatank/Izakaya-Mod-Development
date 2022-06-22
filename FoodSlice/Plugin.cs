@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace FoodSlice
 {
-    [BepInPlugin("Plasmatank.FoodSlice", "FoodSlice", "1.1.0")]
+    [BepInPlugin("Plasmatank.FoodSlice", "FoodSlice", "1.2.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
