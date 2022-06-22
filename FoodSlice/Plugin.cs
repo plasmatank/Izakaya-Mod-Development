@@ -77,10 +77,14 @@ namespace FoodSlice
                         Food.additiveTags.Remove(-1);
                         Plugin.Print(string.Join(",", Food.Tags));
                         var Convert_List = new List<int>{ };
-                        foreach (int x in Food.additiveTags)
+                        foreach (int x in Food.Tags)
                         {
-                            Convert_List.Add(x);
+                            if (x != -1)
+                            {
+                                Convert_List.Add(x);
+                            }                          
                         }
+                        Convert_List.Remove(-20); Convert_List.Remove(-21);
                         Food.baseValue = Convert.ToInt32(Math.Round(Food.baseValue*Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
                         var ReforgedFood = new GameData.Core.Collections.Sellable(Food.id, Food.baseValue, Food.level, Food.tags, Food.banTags, GameData.Core.Collections.Sellable.SellableType.Food, Convert_List, false);
                         Utility.Add_Food(ReforgedFood);
@@ -99,10 +103,11 @@ namespace FoodSlice
                             Food.additiveTags.Add(28);
                             Plugin.Print("///" + string.Join(",", Food.tags) + "///");
                             var Convert_List = new List<int> { };
-                            foreach (int x in Food.additiveTags)
+                            foreach (int x in Food.Tags)
                             {
-                                Convert_List.Add(x);
+                                Convert_List.Add(x);                           
                             }
+                            Convert_List.Remove(-20); Convert_List.Remove(-21);
                             Food.baseValue = Convert.ToInt32(Math.Round(Food.baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
                             var ReforgedFood = new GameData.Core.Collections.Sellable(Food.id, Food.baseValue, Food.level, Food.tags, Food.banTags, GameData.Core.Collections.Sellable.SellableType.Food, Convert_List, false);
                             Utility.Add_Food(ReforgedFood);
