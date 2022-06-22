@@ -39,7 +39,7 @@ namespace ExtraPayment
             GameObject.DontDestroyOnLoad(Modifier);
             Modifier.hideFlags |= HideFlags.HideAndDontSave;
 
-            Price_Ratio = Config.Bind<double>("Config", "Price_Ratio", 0.75, "切分后菜品价格所乘倍率，该值小于1菜品就会越切越便宜。");
+            Price_Ratio = Config.Bind<double>("Config", "Price_Ratio", 0.75, "食材价格调整比率，该值小于1，则在加料时每个食材提供的加成价格越少。");
 
         }
     }
