@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace ExtraPayment
 {
-    [BepInPlugin("Plasmatank.ExtraPayment", "ExtraPayment", "1.0.0")]
+    [BepInPlugin("Plasmatank.ExtraPayment", "ExtraPayment", "1.1.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
@@ -21,6 +21,8 @@ namespace ExtraPayment
         public static BepInEx.Logging.ManualLogSource MyLogger;
 
         public static ConfigEntry<double> Price_Ratio;
+
+        public static ConfigEntry<bool> Is_Repeated_Extra;
 
         public static void Print(object msg)
         {
@@ -33,32 +35,53 @@ namespace ExtraPayment
             Print("Foods now can be sliced.");
             Harmony.PatchAll();
 
-            ClassInjector.RegisterTypeInIl2Cpp<RuntimeListener>();
-            var Modifier = new GameObject("ModifierInstance");
-            Modifier.AddComponent<RuntimeListener>();
-            GameObject.DontDestroyOnLoad(Modifier);
-            Modifier.hideFlags |= HideFlags.HideAndDontSave;
-
             Price_Ratio = Config.Bind<double>("Config", "Price_Ratio", 0.75, "食材价格调整比率，该值小于1，则在加料时每个食材提供的加成价格越少。");
+            Is_Repeated_Extra = Config.Bind<bool>("Config", "Is_Repeated_Extra", true, "启用后，新加入的重复食材也可获得加成，默认开启。");
 
         }
     }
+    public static class Utility
+    {
+        public static void ModifyPrice(ref GameData.Core.Collections.Sellable food, ref GameData.Core.Collections.Recipe recipe)
+        {
+            var selection = GameObject.FindObjectOfType<NightScene.UI.CookingUtility.CookingSelectionModuleUI>();
+            
+            if (Plugin.Is_Repeated_Extra.Value)
+            {
+                var copied_selection = new List<int> { };
+                foreach (int i in selection.selectedIngredients)
+                {
+                    copied_selection.Add(i);
+                }
+                foreach (int j in recipe.Ingredients)
+                {
+                    copied_selection.Remove(j);
+                }
+                foreach (int k in copied_selection)
+                {
+                    food.baseValue += Convert.ToInt32(Math.Round(GameData.Core.Collections.DataBaseCore.RefIngredient(k).baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
+                }
+            }
+            else
+            {
+                foreach (int i in selection.selectedIngredients)
+                {
+                    if (!recipe.Ingredients.Contains(i))
+                    {
+                        food.baseValue += Convert.ToInt32(Math.Round(GameData.Core.Collections.DataBaseCore.RefIngredient(i).baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
+                    }
+                };
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(NightScene.CookingUtility.CookController), nameof(NightScene.CookingUtility.CookController.SetCook))]
     public static class SelectionPatch
     {
         public static void Prefix(ref GameData.Core.Collections.Sellable result, ref GameData.Core.Collections.Recipe recipe)
         {
-            Plugin.Print("Selection hooked！");
-            var selection = GameObject.FindObjectOfType<NightScene.UI.CookingUtility.CookingSelectionModuleUI>();
-            var extra_ingredients = new List<GameData.Core.Collections.Ingredient>();
-            foreach (int i in selection.selectedIngredients)
-            {
-                if (!recipe.Ingredients.Contains(i))
-                {
-                    extra_ingredients.Add(GameData.Core.Collections.DataBaseCore.RefIngredient(i));
-                    result.baseValue += Convert.ToInt32(Math.Round(GameData.Core.Collections.DataBaseCore.RefIngredient(i).baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
-                }
-            };
+            Plugin.Print("Selection hooked！");           
+            Utility.ModifyPrice(ref result, ref recipe);     
         }
     }
     [HarmonyPatch(typeof(Common.UI.SellableDescriber), nameof(Common.UI.SellableDescriber.Describe))]
@@ -75,7 +98,7 @@ namespace ExtraPayment
                     recipe = GameData.Core.Collections.DataBaseCore.RefRecipe(keypair.Key);
                     break;
                 }
-            }
+            }           
             var selection = GameObject.FindObjectOfType<NightScene.UI.CookingUtility.CookingSelectionModuleUI>();
             if (selection is not null)
             {
@@ -89,13 +112,7 @@ namespace ExtraPayment
                 }
                 if (Recipe_Flag)
                 {
-                    foreach (int i in selection.selectedIngredients)
-                    {
-                        if (!recipe.Ingredients.Contains(i))
-                        {
-                            detail.baseValue += Convert.ToInt32(Math.Round(GameData.Core.Collections.DataBaseCore.RefIngredient(i).baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
-                        }
-                    }
+                    Utility.ModifyPrice(ref detail, ref recipe);
                 }              
             }          
         }
@@ -103,18 +120,5 @@ namespace ExtraPayment
         {
             detail.baseValue = __state;
         }
-    }
-
-    public class RuntimeListener : MonoBehaviour
-    {
-        void Start()
-        {
-            Plugin.Print("Listener is loaded!");
-        }
-
-        void Update()
-        {
-
-        }
-    }
+    }     
 }
