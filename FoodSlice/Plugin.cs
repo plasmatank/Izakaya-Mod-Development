@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace FoodSlice
 {
-    [BepInPlugin("Plasmatank.FoodSlice", "FoodSlice", "1.2.0")]
+    [BepInPlugin("Plasmatank.FoodSlice", "FoodSlice", "1.3.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
@@ -84,8 +84,12 @@ namespace FoodSlice
                                 Convert_List.Add(x);
                             }                          
                         }
+
+                        Food.baseValue = Convert.ToInt32(Math.Round(Food.baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
                         Convert_List.Remove(-20); Convert_List.Remove(-21);
-                        Food.baseValue = Convert.ToInt32(Math.Round(Food.baseValue*Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
+                        if (Food.baseValue <= 60) { Convert_List.Remove(-3); }
+                        if (Food.baseValue <= 20) { Convert_List.Add(-2); }
+
                         var ReforgedFood = new GameData.Core.Collections.Sellable(Food.id, Food.baseValue, Food.level, Food.tags, Food.banTags, GameData.Core.Collections.Sellable.SellableType.Food, Convert_List, false);
                         Utility.Add_Food(ReforgedFood);
                         Plugin.Print("Processed!");
@@ -107,8 +111,12 @@ namespace FoodSlice
                             {
                                 Convert_List.Add(x);                           
                             }
-                            Convert_List.Remove(-20); Convert_List.Remove(-21);
+
                             Food.baseValue = Convert.ToInt32(Math.Round(Food.baseValue * Plugin.Price_Ratio.Value, 0, MidpointRounding.AwayFromZero));
+                            Convert_List.Remove(-20); Convert_List.Remove(-21);
+                            if (Food.baseValue <= 60) { Convert_List.Remove(-3); }
+                            if (Food.baseValue <= 20) { Convert_List.Add(-2); }
+
                             var ReforgedFood = new GameData.Core.Collections.Sellable(Food.id, Food.baseValue, Food.level, Food.tags, Food.banTags, GameData.Core.Collections.Sellable.SellableType.Food, Convert_List, false);
                             Utility.Add_Food(ReforgedFood);
                         }
