@@ -5,23 +5,23 @@ using HarmonyLib;
 using UnityEngine;
 using UnhollowerRuntimeLib;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using UniverseLib;
+using System.Reflection;
+using System;
+using System.Linq;
 
 // Made by Plasmatank. For Mystia's Izakaya.
 
 namespace RuntimeCloset
 {
-    [BepInPlugin("Plasmatank.RuntimeCloset", "RuntimeCloset", "1.0.0")]
+    [BepInPlugin("Plasmatank.RuntimeCloset", "RuntimeCloset", "2.0.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
         public ConfigEntry<string> ConfigName { get; private set; }
 
-        public static ConfigEntry<KeyCode> NewyearKey;
-        public static ConfigEntry<KeyCode> HalloweenKey;
-        public static ConfigEntry<KeyCode> ChristmasKey;
-        public static ConfigEntry<KeyCode> ButlerKey;
-        public static ConfigEntry<KeyCode> RoutineKey;
-        public static ConfigEntry<KeyCode> HostessKey;
+        public static ConfigEntry<KeyCode> WindowKey;
 
         public static BepInEx.Logging.ManualLogSource MyLogger;
 
@@ -36,12 +36,7 @@ namespace RuntimeCloset
             Print("The second plugin is now working.");
             Harmony.PatchAll();
 
-            NewyearKey = Config.Bind<KeyCode>("Config", "Newyear", KeyCode.F1, "切换到新年皮肤。");
-            HalloweenKey = Config.Bind<KeyCode>("Config", "Halloween", KeyCode.F2, "切换到万圣节皮肤。");
-            ChristmasKey = Config.Bind<KeyCode>("Config", "Christmas", KeyCode.F3, "切换到圣诞节皮肤。");
-            ButlerKey = Config.Bind<KeyCode>("Config", "Butler", KeyCode.F4, "切换到执事皮肤。");
-            RoutineKey = Config.Bind<KeyCode>("Config", "Routine", KeyCode.F5, "切换到普通皮肤。");
-            HostessKey = Config.Bind<KeyCode>("Config", "Hostess", KeyCode.F6, "切换到工作服。");         
+            WindowKey = Config.Bind<KeyCode>("Config", "WindowKey", KeyCode.F1, "切换衣柜窗口的开/关");                  
 
             ClassInjector.RegisterTypeInIl2Cpp<RuntimeListener>();
             var closet = new GameObject("ClosetInstance");
@@ -63,17 +58,36 @@ namespace RuntimeCloset
     
     public class RuntimeListener : MonoBehaviour
     {
+        public bool DisplayingWindow = false;
+        internal static RuntimeListener Instance { get; private set; }
+
+        Rect windowRect = new Rect(500, 200, 500, 400);
+
+        public static Coroutine Current_Coroutine;
+        public static Sprite Current_Sprite;       
+
         static Sprite Newyear;
         static Sprite Halloween;
         static Sprite Christmas;
         static Sprite Butler;
         static Sprite Routine;
         static Sprite Hostess;
+        static Sprite Sparrow;
+        static Sprite Sailor;
+        static Sprite Miko;
+        static Sprite Oldschool;
+        static Sprite Idol;
+        static Sprite Kimono;
+
+        public static Sprite s = Sprite.Create(new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1);
+        public static List<Sprite> Black = new List<Sprite>() {s,s,s,s,s,s};
+        public static List<Texture2D> Origin_Black = new List<Texture2D>() {s.texture, s.texture, s.texture, s.texture, s.texture, s.texture};
+
 
         public static void search()
         {
-            Object[] Sprites = GameObject.FindObjectsOfTypeIncludingAssets(UnhollowerRuntimeLib.Il2CppType.Of<Sprite>());
-            foreach (Object i in Sprites)
+            UnityEngine.Object[] Sprites = GameObject.FindObjectsOfTypeIncludingAssets(UnhollowerRuntimeLib.Il2CppType.Of<Sprite>());
+            foreach (UnityEngine.Object i in Sprites)
             {
                 var sprite = i.TryCast<Sprite>();
                 switch (sprite.texture.name)
@@ -90,17 +104,79 @@ namespace RuntimeCloset
                         Routine = sprite; break;
                     case "老板娘 普通（微笑）翅膀垂下":
                         Hostess = sprite; break;
+                    case "MystiaSparrow":
+                        Sparrow = sprite; break;
+                    case "MystiaSailor":
+                        Sailor = sprite; break;
+                    case "MystiaMiko":
+                        Miko = sprite; break;
+                    case "米斯蒂娅中华校服":
+                        Oldschool = sprite; break;
+                    case "米斯蒂娅偶像":
+                        Idol = sprite; break;
+                    case "米斯蒂娅访问和服":
+                        Kimono = sprite; break;
+
+                    case "MystiaBlack_1":
+                        Black[0] = sprite; Origin_Black[0] = sprite.texture; 
+                        break;
+                    case "MystiaBlack_2":
+                        Black[1] = sprite; Origin_Black[1] = sprite.texture; 
+                        break;
+                    case "MystiaBlack_3":
+                        Black[2] = sprite; Origin_Black[2] = sprite.texture;
+                        break;
+                    case "MystiaBlack_4":
+                        Black[3] = sprite; Origin_Black[3] = sprite.texture;
+                        break;
+                    case "MystiaBlack_5":
+                        Black[4] = sprite; Origin_Black[4] = sprite.texture;
+                        break;
+                    case "MystiaBlack_6":
+                        Black[5] = sprite; Origin_Black[5] = sprite.texture;
+                        break;
                 }
             }
+            Current_Sprite = Butler;
         }
 
-        public static void ImageSetter(Sprite method_sprite)
-        {
+        public static void ImageSetter(Sprite this_sprite, bool animation = false)
+        {             
             var portrayal = GameObject.Find("PlayerPortrayal");
             var pre_image = portrayal.GetComponent<Image>();
-            var image = pre_image.TryCast<Image>();
-            Plugin.Print(image.ToString());
-            image.sprite = method_sprite;
+            var image = pre_image.TryCast<Image>();      
+            
+            if (Current_Sprite == Black[0])
+            {
+                RuntimeHelper.StopCoroutine(Current_Coroutine);
+            }
+
+            if (!animation)
+            {
+                if (GameData.RunTime.Common.RunTimeAlbum.GetPlayerClothes().index != 23)
+                {
+                    image.sprite = this_sprite;                                                           
+                }
+                else
+                {
+                    Common.UI.ReceivedObjectDisplayerController controller = Common.UI.ReceivedObjectDisplayerController.Instance;
+                    controller.NotifyTextMessage("当穿着黑色套装时，不支持运行时更衣。");                    
+                    //Traverse.Create(Black[i]).Property("texture").SetValue(this_sprite.texture);
+                    //Black[i].GetType().GetFields().FirstOrDefault(f => f.Name.Contains($"<texture>") && f.Name.Contains("BackingField")).SetValue(Black[i], this_sprite.texture);
+                    //尝试反射修改，但属性被IL2CPP包装了，无功而返
+                }                   
+                
+            }
+            else
+            {
+                Current_Coroutine = RuntimeHelper.StartCoroutine(Utility.BlackAnimation(image));               
+                if (GameData.RunTime.Common.RunTimeAlbum.GetPlayerClothes().index == 23)
+                {
+                    Common.UI.ReceivedObjectDisplayerController controller = Common.UI.ReceivedObjectDisplayerController.Instance;
+                    controller.NotifyTextMessage("老板娘智商-1!");
+                }
+            }
+            Current_Sprite = this_sprite;
         }
 
         void Start()
@@ -110,46 +186,90 @@ namespace RuntimeCloset
 
         void Update()
         {
-            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.NewyearKey.Value))
+            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.WindowKey.Value))
             {
-                Plugin.Print(Plugin.NewyearKey.Value.ToString() + " is down!");
+                Plugin.Print(Plugin.WindowKey.Value.ToString() + " is down!");
+                DisplayingWindow = !DisplayingWindow;
+            }
+        }
+
+        public void OnGUI()
+        {
+            if (this.DisplayingWindow)
+            {
+                windowRect = GUI.Window(3090, windowRect, (GUI.WindowFunction)MainWindow, "衣柜");
+            }
+        }
+        public void MainWindow(int id)
+        {
+            if (GUILayout.Button("切换到新年服装"))
+            {
                 ImageSetter(Newyear);
             }
-
-
-            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.HalloweenKey.Value))
+            if (GUILayout.Button("切换到万圣节服装"))
             {
-                Plugin.Print(Plugin.HalloweenKey.Value.ToString() + " is down!");
                 ImageSetter(Halloween);
             }
-
-
-            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.ChristmasKey.Value))
+            if (GUILayout.Button("切换到圣诞节服装"))
             {
-                Plugin.Print(Plugin.ChristmasKey.Value.ToString() + " is down!");
                 ImageSetter(Christmas);
             }
-
-
-            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.ButlerKey.Value))
+            if (GUILayout.Button("切换到执事服"))
             {
-                Plugin.Print(Plugin.ButlerKey.Value.ToString() + " is down!");
                 ImageSetter(Butler);
             }
-
-
-            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.RoutineKey.Value))
+            if (GUILayout.Button("切换到日常服装"))
             {
-                Plugin.Print(Plugin.RoutineKey.Value.ToString() + " is down!");
                 ImageSetter(Routine);
             }
-
-
-            if (UniverseLib.Input.InputManager.GetKeyDown(Plugin.HostessKey.Value))
+            if (GUILayout.Button("切换到老板娘营业服"))
             {
-                Plugin.Print(Plugin.HostessKey.Value.ToString() + " is down!");
                 ImageSetter(Hostess);
             }
+            if (GUILayout.Button("切换到睡衣"))
+            {
+                ImageSetter(Sparrow);
+            }
+            if (GUILayout.Button("切换到水手服"))
+            {
+                ImageSetter(Sailor);
+            }
+            if (GUILayout.Button("切换到巫女服"))
+            {
+                ImageSetter(Miko);
+            }
+            if (GUILayout.Button("切换到中华校服"))
+            {
+                ImageSetter(Oldschool);
+            }
+            if (GUILayout.Button("切换到偶像服"))
+            {
+                ImageSetter(Idol);
+            }
+            if (GUILayout.Button("切换到访问和服"))
+            {
+                ImageSetter(Kimono);
+            }
+            if (GUILayout.Button("切换到黑色套装(动态)"))
+            {
+                ImageSetter(Black[0], true);
+            }
+
+            GUI.DragWindow();
+        }
+    }
+    public class Utility
+    {
+        public static System.Collections.IEnumerator BlackAnimation(Image image)
+        {
+            while (true)
+            {
+                foreach (Sprite sprite in RuntimeListener.Black)
+                {
+                    image.sprite = sprite;
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }                       
         }
     }
 }
