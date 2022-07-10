@@ -14,7 +14,7 @@ using BepInEx.IL2CPP.Utils.Collections; //WrapIEnumerableToManaged
 
 namespace MystiaBar
 {
-    [BepInPlugin("Plasmatank.MystiaBar", "MystiaBar", "1.0.0")]
+    [BepInPlugin("Plasmatank.MystiaBar", "MystiaBar", "1.1.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
@@ -226,7 +226,7 @@ namespace MystiaBar
                             var list = new List<int>();
                             list.Add((Plugin.Custom_Beverage.Contains(Convert.ToInt32(strings[^1])) ? 0 : Plugin.Start_Index.Value) + Convert.ToInt32(strings[^1]));
                             GameData.RunTime.Common.RunTimeStorage.IngredientInRange(list.Cast<IEnumerable<int>>());
-                        }
+                        }                      
                     }
                 };
                 Il2CppSystem.Action final_action = action;

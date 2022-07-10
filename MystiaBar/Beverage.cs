@@ -1,12 +1,14 @@
 ﻿using BepInEx;
 using BepInEx.IL2CPP;
 using BepInEx.Configuration;
+using HarmonyLib;
 using System;
 using System.IO;
 using Il2CppSystem.Collections.Generic;
 using UnityEngine;
 using UnhollowerBaseLib;
 using System.Text.Json;
+using System.Linq;
 
 namespace MystiaBar
 {
@@ -106,6 +108,79 @@ namespace MystiaBar
             else
             {
                 cabinet.StoreFood(food, 1);
+            }
+        }
+    }
+    [HarmonyPatch(typeof(Common.UI.StorageUtility.StorageIngredientUI), nameof(Common.UI.StorageUtility.StorageIngredientUI.Open))]
+    public static class IngredientLoadHook
+    {
+        public static void Postfix(Common.UI.StorageUtility.StorageIngredientUI __instance)
+        {
+            var View = GameObject.Find("IngredientPannel");
+            var Content = View.transform.GetChild(0).GetChild(0).GetChild(3);
+            var childs = Enumerable.Range(0, Content.childCount);
+            foreach (int i in childs)
+            {
+                var image = Content.GetChild(i).GetChild(1).gameObject.GetComponent<UnityEngine.UI.Image>();
+                if (!image.activeSprite.name.Contains("Ingredient"))
+                {
+                    var strings = image.activeSprite.name.Split("_", StringSplitOptions.RemoveEmptyEntries);
+                    int Real_ID = (Plugin.Custom_Beverage.Contains(Convert.ToInt32(strings[^1])) ? 0 : Plugin.Start_Index.Value) + Convert.ToInt32(strings[^1]);
+
+                    Action action = () =>
+                    {
+                        if (GameData.RunTime.Common.RunTimeStorage.Ingredients[Real_ID] > 0)
+                        {
+                            Plugin.Print("Converted: " + Real_ID.ToString());
+                            GameData.RunTime.Common.RunTimeStorage.IngredientOut(Real_ID);
+                            __instance.UpdatePannelElement();
+                            var list = new List<int>();
+                            list.Add((Plugin.Custom_Beverage.Contains(Real_ID) ? 0 : -Plugin.Start_Index.Value) + Real_ID);
+                            GameData.RunTime.Common.RunTimeStorage.BeverageInRange(list.Cast<IEnumerable<int>>());
+                        }
+                    };
+                    Il2CppSystem.Action final_action = action;
+
+                    if (Content.GetChild(i).gameObject.GetComponent<DEYU.UniversalUISystem.InteractableBase>().onSubmitAction is null)
+                    {
+                        Content.GetChild(i).gameObject.GetComponent<DEYU.UniversalUISystem.InteractableBase>().onSubmitAction = final_action;
+                    }
+                }            
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Common.UI.StorageUtility.StorageIngredientUI), nameof(Common.UI.StorageUtility.StorageIngredientUI.UpdatePannelElement))]
+    public static class IngredientUpdateHook
+    {
+        public static void Postfix(Common.UI.StorageUtility.StorageIngredientUI __instance)
+        {
+            var View = GameObject.Find("IngredientPannel");
+            var Content = View.transform.GetChild(0).GetChild(0).GetChild(3);
+            var childs = Enumerable.Range(0, Content.childCount);
+            foreach (int i in childs)
+            {
+                var image = Content.GetChild(i).GetChild(1).gameObject.GetComponent<UnityEngine.UI.Image>();
+                if (!image.activeSprite.name.Contains("Ingredient"))
+                {
+                    var strings = image.activeSprite.name.Split("_", StringSplitOptions.RemoveEmptyEntries);
+                    int Real_ID = (Plugin.Custom_Beverage.Contains(Convert.ToInt32(strings[^1])) ? 0 : Plugin.Start_Index.Value) + Convert.ToInt32(strings[^1]);
+
+                    Action action = () =>
+                    {
+                        if (GameData.RunTime.Common.RunTimeStorage.Ingredients[Real_ID] > 0)
+                        {
+                            Plugin.Print("Converted: " + Real_ID.ToString());
+                            GameData.RunTime.Common.RunTimeStorage.IngredientOut(Real_ID);
+                            __instance.UpdatePannelElement();
+                            var list = new List<int>();
+                            list.Add((Plugin.Custom_Beverage.Contains(Real_ID) ? 0 : -Plugin.Start_Index.Value) + Real_ID);
+                            GameData.RunTime.Common.RunTimeStorage.BeverageInRange(list.Cast<IEnumerable<int>>());
+                        }
+                    };
+                    Il2CppSystem.Action final_action = action;
+                    Content.GetChild(i).gameObject.GetComponent<DEYU.UniversalUISystem.InteractableBase>().onSubmitAction = final_action;
+                }               
             }
         }
     }
