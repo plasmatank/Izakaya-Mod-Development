@@ -23,7 +23,6 @@ namespace MoreIngredients
         public System.Collections.Generic.List<int> Tags { get; set; }
         public string Trader { get; set; }
         public int TradeAmount { get; set; }
-
         public string SpritePath { get; set; }
     }
 
@@ -42,7 +41,7 @@ namespace MoreIngredients
             return iCall_LoadImage.Invoke(tex.Pointer, il2cppArray.Pointer, markNonReadable);
         }
 
-        public static Sprite LoadByIo(string path)
+        public static Sprite LoadByIo(string path, string processed_name)
         {
             Sprite Loaded_sprite;
             Texture2D tex = new Texture2D(1, 1);
@@ -55,6 +54,7 @@ namespace MoreIngredients
             {
                 Loaded_sprite = GameData.CoreLanguage.ObjectLanguageBase.defaultNull;
             }
+            Loaded_sprite.name = processed_name;
 
             return Loaded_sprite;
         }
