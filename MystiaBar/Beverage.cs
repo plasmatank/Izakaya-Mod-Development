@@ -122,6 +122,7 @@ namespace MystiaBar
             foreach (int i in childs)
             {
                 var image = Content.GetChild(i).GetChild(1).gameObject.GetComponent<UnityEngine.UI.Image>();
+                Plugin.Print(image.activeSprite.name);
                 if (!image.activeSprite.name.Contains("Ingredient"))
                 {
                     var strings = image.activeSprite.name.Split("_", StringSplitOptions.RemoveEmptyEntries);
@@ -164,8 +165,8 @@ namespace MystiaBar
                 if (!image.activeSprite.name.Contains("Ingredient"))
                 {
                     var strings = image.activeSprite.name.Split("_", StringSplitOptions.RemoveEmptyEntries);
-                    int Real_ID = (Plugin.Custom_Beverage.Contains(Convert.ToInt32(strings[^1])) ? 0 : Plugin.Start_Index.Value) + Convert.ToInt32(strings[^1]);
-
+                    int Real_ID = (Plugin.Custom_Beverage.Contains(Convert.ToInt32(strings[^1])) ? 0 : Plugin.Start_Index.Value) + Convert.ToInt32(strings[^1]);   
+                    
                     Action action = () =>
                     {
                         if (GameData.RunTime.Common.RunTimeStorage.Ingredients[Real_ID] > 0)

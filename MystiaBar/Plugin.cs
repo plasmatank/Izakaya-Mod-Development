@@ -14,7 +14,7 @@ using BepInEx.IL2CPP.Utils.Collections; //WrapIEnumerableToManaged
 
 namespace MystiaBar
 {
-    [BepInPlugin("Plasmatank.MystiaBar", "MystiaBar", "1.1.0")]
+    [BepInPlugin("Plasmatank.MystiaBar", "MystiaBar", "2.0.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
@@ -36,12 +36,6 @@ namespace MystiaBar
             Log.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
             Print("Now you can make your own drinks!");
             Harmony.PatchAll();
-
-            ClassInjector.RegisterTypeInIl2Cpp<RuntimeListener>();            
-            var Modifier = new GameObject("ModifierInstance");
-            Modifier.AddComponent<RuntimeListener>();
-            GameObject.DontDestroyOnLoad(Modifier);
-            Modifier.hideFlags |= HideFlags.HideAndDontSave;
 
             Custom_Beverage = new List<int>();
             Start_Index = Config.Bind<int>("Config", "Start_Index", 8500, "基酒起始序号。");
@@ -111,13 +105,15 @@ namespace MystiaBar
 
                         GameData.CoreLanguage.Collections.DataBaseLanguage.Foods.Add(beverage.ID, Pre_LanguageObject);
                         GameData.Core.Collections.DataBaseCore.Foods.Add(beverage.ID, Pre_SellableObject);
+                        GameData.Core.Collections.DataBaseCore.FoodsMapping.Add(beverage.ID, "PLASMATANK_BEVERAGE");
 
                         GameData.CoreLanguage.Collections.DataBaseLanguage.Beverages.Add(beverage.ID, LanguageObject);
                         GameData.Core.Collections.DataBaseCore.Beverages.Add(beverage.ID, SellableObject);
                         GameData.CoreLanguage.Collections.DataBaseLanguage.BeveragePlates.Add(beverage.ID, Utility.LoadByIo(beverage.SignboardPath, beverage.Name + "_" + beverage.ID));
+                        GameData.Core.Collections.DataBaseCore.BeveragesMapping.Add(beverage.ID, "PLASMATANK_BEVERAGE");
 
                         GameData.Core.Collections.DataBaseCore.Recipes.Add(beverage.ID, RecipeObejct);
-                        GameData.Core.Collections.DataBaseCore.RecipesMapping.Add(beverage.ID, beverage.ID.ToString() + "PLASMATANK");
+                        GameData.Core.Collections.DataBaseCore.RecipesMapping.Add(beverage.ID, "PLASMATANK_BEVERAGE");
                         
                         Plugin.Custom_Beverage.Add(beverage.ID);
                     }                   
@@ -129,12 +125,13 @@ namespace MystiaBar
                 if (!GameData.RunTime.Common.RunTimeStorage.Recipes.Contains(i))
                 {
                     GameData.RunTime.Common.RunTimeStorage.Recipes.Add(i);
-                    if (!GameData.Core.Collections.DataBaseCore.Ingredients.ContainsKey(i))
-                    {
-                        Loading_Base_Wine(i, GameData.Core.Collections.DataBaseCore.Beverages[i]);
-                    }
-                    GameData.RunTime.Common.RunTimeAlbum.Ingredients.Add(i);
+                    GameData.RunTime.Common.RunTimeAlbum.Foods.Add(i);
                 }
+                if (!GameData.Core.Collections.DataBaseCore.Ingredients.ContainsKey(i))
+                {
+                    Loading_Base_Wine(i, GameData.Core.Collections.DataBaseCore.Beverages[i]);
+                    GameData.RunTime.Common.RunTimeAlbum.Ingredients.Add(i);
+                }               
             }
             return true;
         }
@@ -144,7 +141,21 @@ namespace MystiaBar
             var Wine_Pics = new GameData.CoreLanguage.ObjectLanguageBase(wine.Text.Name + " 基酒", wine.Text.Description, wine.Text.Visual);
             GameData.Core.Collections.DataBaseCore.Ingredients.Add(ID, Base_Wine);
             GameData.CoreLanguage.Collections.DataBaseLanguage.Ingredients.Add(ID, Wine_Pics);
-            GameData.Core.Collections.DataBaseCore.IngredientsMapping.Add(ID, ID + "PLASMATANK");          
+            GameData.Core.Collections.DataBaseCore.IngredientsMapping.Add(ID, "PLASMATANK_BEVERAGE");           
+        }
+    }
+    [HarmonyPatch(typeof(GameData.Profile.GameDataProfile), nameof(GameData.Profile.GameDataProfile.ActiveDLCLabel), MethodType.Getter)]
+    public static class CheckHook
+    {
+        public static Common.LoadingSceneManager Loader = GameObject.FindObjectOfType<Common.LoadingSceneManager>();
+        public static void Postfix(ref List<string> __result)
+        {
+            var Mod_Label = "PLASMATANK_BEVERAGE";
+            Loader.ShowLoadingMessage($"\nExtra Mod Loaded:{Mod_Label}");
+            var New_List = new List<string>();
+            New_List.AddRange(__result.Cast<IEnumerable<string>>());
+            New_List.Add(Mod_Label);
+            __result = New_List;
         }
     }
 
@@ -234,18 +245,4 @@ namespace MystiaBar
             }
         }
     }
-
-    public class RuntimeListener : MonoBehaviour
-    {
-        void Start()
-        {
-            Plugin.Print("Listener is loaded!");
-        }
-
-        void Update()
-        {
-            
-        }
-    }
-    
 }
