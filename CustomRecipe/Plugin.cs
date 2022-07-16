@@ -11,7 +11,7 @@ using Il2CppSystem.Collections.Generic;
 
 namespace CustomRecipe
 {
-    [BepInPlugin("Plasmatank.CustomRecipe", "CustomRecipe", "2.0.0")]
+    [BepInPlugin("Plasmatank.CustomRecipe", "CustomRecipe", "2.1.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
@@ -130,10 +130,13 @@ namespace CustomRecipe
                                 Print("ID:" + recipe.ID + "是非原版食谱，不支持替换。");
                             }
                         }
-                        if (Passed)
+                        if (Passed || Installed.Contains(recipe.ID))
                         {
-                            Installed.Add(recipe.ID);
-                            Print(file.Name + " is loaded!");
+                            if (!Installed.Contains(recipe.ID))
+                            {
+                                Installed.Add(recipe.ID);
+                                Print(file.Name + " is loaded!");
+                            }                               
                             if (!GameData.RunTime.Common.RunTimeStorage.Recipes.Contains(recipe.ID))
                             {
                                 GameData.RunTime.Common.RunTimeStorage.Recipes.Add(recipe.ID);
@@ -144,10 +147,7 @@ namespace CustomRecipe
                             }
                         }                        
                     }
-                }
-                
-
-
+                }              
             }
         }    
         [HarmonyPatch(typeof(GameData.Profile.GameDataProfile), nameof(GameData.Profile.GameDataProfile.ActiveDLCLabel), MethodType.Getter)]
