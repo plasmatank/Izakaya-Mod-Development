@@ -32,7 +32,7 @@ namespace CustomRecipe
 
             if (LoadImage(tex, File.ReadAllBytes(path), false))
             {
-                Loaded_sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                Loaded_sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.height * 1.25f);
             }
             else
             {
