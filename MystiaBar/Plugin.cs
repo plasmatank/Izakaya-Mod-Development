@@ -14,7 +14,7 @@ using BepInEx.IL2CPP.Utils.Collections; //WrapIEnumerableToManaged
 
 namespace MystiaBar
 {
-    [BepInPlugin("Plasmatank.MystiaBar", "MystiaBar", "2.0.0")]
+    [BepInPlugin("Plasmatank.MystiaBar", "MystiaBar", "2.1.0")]
     public class Plugin : BasePlugin
     {
         public Harmony Harmony { get; } = new("VeryHarmonious");
@@ -121,17 +121,17 @@ namespace MystiaBar
             }
             //Adding custom beverage to RunTimeStorage
             foreach (int i in Plugin.Custom_Beverage)
-            {
+            {                
+                if (!GameData.Core.Collections.DataBaseCore.Ingredients.ContainsKey(i))
+                {
+                    Loading_Base_Wine(i, GameData.Core.Collections.DataBaseCore.Beverages[i]);                   
+                }
                 if (!GameData.RunTime.Common.RunTimeStorage.Recipes.Contains(i))
                 {
                     GameData.RunTime.Common.RunTimeStorage.Recipes.Add(i);
                     GameData.RunTime.Common.RunTimeAlbum.Foods.Add(i);
-                }
-                if (!GameData.Core.Collections.DataBaseCore.Ingredients.ContainsKey(i))
-                {
-                    Loading_Base_Wine(i, GameData.Core.Collections.DataBaseCore.Beverages[i]);
                     GameData.RunTime.Common.RunTimeAlbum.Ingredients.Add(i);
-                }               
+                }
             }
             return true;
         }

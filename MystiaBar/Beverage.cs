@@ -122,7 +122,6 @@ namespace MystiaBar
             foreach (int i in childs)
             {
                 var image = Content.GetChild(i).GetChild(1).gameObject.GetComponent<UnityEngine.UI.Image>();
-                Plugin.Print(image.activeSprite.name);
                 if (!image.activeSprite.name.Contains("Ingredient"))
                 {
                     var strings = image.activeSprite.name.Split("_", StringSplitOptions.RemoveEmptyEntries);
